@@ -122,7 +122,7 @@ class RegistrationWorkerStore(SQLBaseStore):
         refers to).
 
         Returns:
-            defer.Deferred: Resolves to a list[dict[user_id (str), expiration_ts_ms (int)]]
+            Deferred: Resolves to a list[dict[user_id (str), expiration_ts_ms (int)]]
         """
         def select_users_txn(txn, now_ms, renew_at):
             sql = (
