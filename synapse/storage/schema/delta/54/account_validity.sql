@@ -16,5 +16,10 @@
 -- Track what users are in public rooms.
 CREATE TABLE IF NOT EXISTS account_validity (
     user_id TEXT PRIMARY KEY,
-    expiration_ts_ms BIGINT NOT NULL
+    expiration_ts_ms BIGINT NOT NULL,
+    sent_email BOOLEAN NOT NULL,
+    refresh_string TEXT
 );
+
+CREATE INDEX account_validity_sent_email_idx ON account_validity(sent_email, expiration_ts_ms)
+CREATE UNIQUE INDEX account_validity_refresh_string_idx ON account_validity(refresh_string)

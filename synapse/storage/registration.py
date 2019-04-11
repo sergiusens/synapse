@@ -107,6 +107,14 @@ class RegistrationWorkerStore(SQLBaseStore):
         defer.returnValue(res)
 
     @defer.inlineCallbacks
+    def set_refresh_string_for_user(self, user, refresh_string):
+        yield self._simple_update_one(
+            table="account_validity",
+            keyvalues={"user_id": user},
+            updatevalues={"refresh_string": refresh_string},
+        )
+
+    @defer.inlineCallbacks
     def is_server_admin(self, user):
         res = yield self._simple_select_one_onecol(
             table="users",
