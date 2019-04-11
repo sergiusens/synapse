@@ -29,7 +29,7 @@ class AccountValidityConfig(Config):
             self.renew_at = self.parse_duration(config["renew_at"])
 
         if "renew_email_subject" in config:
-            self.renew_email_subject = renew_email_subject["renew_email_subject"]
+            self.renew_email_subject = config["renew_email_subject"]
         else:
             self.renew_email_subject = "Renew your %(app)s account"
 

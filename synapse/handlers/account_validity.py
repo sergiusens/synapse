@@ -16,16 +16,14 @@
 import email.mime.multipart
 import email.utils
 import logging
-import time
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-
-import jinja2
 
 from twisted.internet import defer
 
 from synapse.api.errors import StoreError
 from synapse.push import mailer
+from synapse.types import UserID
 from synapse.util import stringutils
 from synapse.util.logcontext import make_deferred_yieldable
 
@@ -76,7 +74,7 @@ class AccountValidityHandler(object):
         except StoreError:
             user_display_name = user
 
-        refresh_string = yield _get_refresh_string(user)
+        refresh_string = yield self._get_refresh_string(user)
         url = "%s_matrix/client/unstable/account_validity/refresh?token=%s" % (
             self.hs.config.public_baseurl,
             refresh_string,
