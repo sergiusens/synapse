@@ -534,7 +534,7 @@ def load_jinja2_templates(config, template_html_name, template_text_name):
     env.filters["mxc_to_http"] = _create_mxc_to_http_filter(config)
 
     template_html = env.get_template(template_html_name)
-    template_text = env.get_template(template_html_text)
+    template_text = env.get_template(template_text_name)
 
     return template_html, template_text
 
