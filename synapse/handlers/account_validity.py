@@ -62,7 +62,22 @@ class AccountValidityHandler(object):
         )
 
     @defer.inlineCallbacks
-    def send_refresh_email(self, user, expiration_ts):
+    def send_renewal_emails(self):
+        expiring_users = yield self.store.get_users_expiring_soon()
+
+        for user in expiring_users:
+            yield self.send_renewal_email_to_user(
+                user=user["user_id"],
+                expiration_ts=user["expiration_ts_ms"],
+            )
+
+            yield self.store.set_renewal_mail_status(
+                user=user["user_id"],
+                email_needs_sending=False,
+            )
+
+    @defer.inlineCallbacks
+    def send_renewal_email_to_user(self, user, expiration_ts):
         addresses = yield self._get_email_addresses_for_user(user)
 
         try:
@@ -74,10 +89,10 @@ class AccountValidityHandler(object):
         except StoreError:
             user_display_name = user
 
-        refresh_string = yield self._get_refresh_string(user)
+        renewal_string = yield self._get_renewal_string(user)
         url = "%s_matrix/client/unstable/account_validity/refresh?token=%s" % (
             self.hs.config.public_baseurl,
-            refresh_string,
+            renewal_string,
         )
 
         template_vars = {
@@ -127,13 +142,13 @@ class AccountValidityHandler(object):
         defer.returnValue(addresses)
 
     @defer.inlineCallbacks
-    def _get_refresh_string(self, user):
+    def _get_renewal_string(self, user):
         attempts = 0
         while attempts < 5:
             try:
-                refresh_string = stringutils.random_string(32)
-                yield self.store.set_refresh_string_for_user(user, refresh_string)
-                defer.returnValue(refresh_string)
+                renewal_string = stringutils.random_string(32)
+                yield self.store.set_renewal_string_for_user(user, renewal_string)
+                defer.returnValue(renewal_string)
             except StoreError:
                 attempts += 1
         raise StoreError(500, "Couldn't generate a unique string as refresh string.")

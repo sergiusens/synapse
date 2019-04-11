@@ -32,6 +32,7 @@ class RegistrationWorkerStore(SQLBaseStore):
         super(RegistrationWorkerStore, self).__init__(db_conn, hs)
 
         self.config = hs.config
+        self.clock = hs.get_clock()
 
     @cached()
     def get_user_by_id(self, user_id):
@@ -107,11 +108,44 @@ class RegistrationWorkerStore(SQLBaseStore):
         defer.returnValue(res)
 
     @defer.inlineCallbacks
-    def set_refresh_string_for_user(self, user, refresh_string):
+    def set_renewal_string_for_user(self, user, renewal_string):
         yield self._simple_update_one(
             table="account_validity",
             keyvalues={"user_id": user},
-            updatevalues={"refresh_string": refresh_string},
+            updatevalues={"renewal_string": renewal_string},
+        )
+
+    @defer.inlineCallbacks
+    def get_users_expiring_soon(self):
+        """Selects users whose account will expire in the [now, now + renew_at] time
+        window (see configuration for account_validity for information on what renew_at
+        refers to).
+
+        Returns:
+            defer.Deferred: Resolves to a list[dict[user_id (str), expiration_ts_ms (int)]]
+        """
+        def select_users_txn(txn, now_ms, renew_at):
+            sql = (
+                "SELECT user_id, expiration_ts_ms FROM account_validity"
+                " WHERE email_sent = False AND (expiration_ts_ms - ?) =< ?"
+            )
+            values = [now_ms, renew_at]
+            txn.execute(sql, values)
+
+        res = yield self.runInteraction(
+            "get_users_expiring_soon",
+            select_users_txn,
+            self.clock.time_msec(), self.config.account_validity.renew_at,
+        )
+
+        defer.returnValue(res)
+
+    @defer.inlineCallbacks
+    def set_renewal_mail_status(self, user, email_needs_sending):
+        yield self._simple_update_one(
+            table="account_validity",
+            keyvalues={"user_id": user},
+            updatevalues={"email_sent": email_needs_sending},
         )
 
     @defer.inlineCallbacks
