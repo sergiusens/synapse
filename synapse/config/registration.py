@@ -23,7 +23,9 @@ from synapse.util.stringutils import random_string_with_symbols
 class AccountValidityConfig(Config):
     def __init__(self, config):
         self.enabled = (len(config) > 0)
-        self.period = self.parse_duration(config["period"])
+
+        if "period" in config:
+            self.period = self.parse_duration(config["period"])
 
         if "renew_at" in config:
             self.renew_at = self.parse_duration(config["renew_at"])
