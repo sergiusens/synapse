@@ -106,13 +106,13 @@ class RegistrationConfig(Config):
         # filled.
         #
         # ``renew_email_subject`` is the subject of the email sent out with the renewal
-        # link. ``%(app)s`` is a placeholder for the ``app_name`` parameter from the
+        # link. ``%%(app)s`` is a placeholder for the ``app_name`` parameter from the
         # ``email`` section.
         #
         #account_validity:
         #  period: 6w
         #  renew_at: 1w
-        #  renew_email_subject: "Renew your %(app)s account"
+        #  renew_email_subject: "Renew your %%(app)s account"
 
         # The user must provide all of the below types of 3PID when registering.
         #
