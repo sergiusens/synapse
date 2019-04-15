@@ -166,13 +166,7 @@ class AccountValidityHandler(object):
 
         new_expiration_date = self.clock.time_msec() + self._account_validity.period
 
-        yield self.store.set_expiration_ts_for_user(
+        yield self.store.renew_account_for_user(
             user=user,
-            expiration_ts_ms=new_expiration_date,
-        )
-        # Set email_sent to false so that we can send a renewal email when the
-        # new validity period ends.
-        yield self.store.set_renewal_mail_status(
-            user=user["user_id"],
-            email_sent=False,
+            new_expiration_ts=new_expiration_date,
         )

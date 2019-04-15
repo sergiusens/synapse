@@ -108,12 +108,25 @@ class RegistrationWorkerStore(SQLBaseStore):
         defer.returnValue(res)
 
     @defer.inlineCallbacks
-    def set_expiration_ts_for_user(self, user, expiration_ts_ms):
-        yield self._simple_update_one(
-            table="account_validity",
-            keyvalues={"user_id": user},
-            updatevalues={"expiration_ts_ms": expiration_ts_ms},
-            desc="set_expiration_ts_for_user",
+    def renew_account_for_user(self, user, new_expiration_ts):
+        def renew_account_for_user_txn(txn, user, new_expiration_ts):
+            yield self._simple_update_txn(
+                txn=txn,
+                table="account_validity",
+                keyvalues={"user_id": user},
+                updatevalues={
+                    "expiration_ts_ms": new_expiration_ts,
+                    "email_sent": False,
+                },
+            )
+            self._invalidate_cache_and_stream(
+                txn, self.get_expiration_ts_for_user, (user,),
+            )
+
+        yield self.runInteraction(
+            "renew_account_for_user",
+            renew_account_for_user_txn,
+            user, new_expiration_ts,
         )
 
     @defer.inlineCallbacks
