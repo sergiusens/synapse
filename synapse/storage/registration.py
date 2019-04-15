@@ -585,21 +585,22 @@ class RegistrationStore(RegistrationWorkerStore,
                     }
                 )
 
-            if self._account_validity.enabled:
-                now_ms = self.clock.time_msec()
-                expiration_ts = now_ms + self._account_validity.period
-                self._simple_insert_txn(
-                    txn,
-                    "account_validity",
-                    values={
-                        "user_id": user_id,
-                        "expiration_ts_ms": expiration_ts,
-                        "email_sent": False,
-                    }
-                )
         except self.database_engine.module.IntegrityError:
             raise StoreError(
                 400, "User ID already taken.", errcode=Codes.USER_IN_USE
+            )
+
+        if self._account_validity.enabled:
+            now_ms = self.clock.time_msec()
+            expiration_ts = now_ms + self._account_validity.period
+            self._simple_insert_txn(
+                txn,
+                "account_validity",
+                values={
+                    "user_id": user_id,
+                    "expiration_ts_ms": expiration_ts,
+                    "email_sent": False,
+                }
             )
 
         if token:
