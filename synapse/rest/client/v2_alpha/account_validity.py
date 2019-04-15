@@ -47,5 +47,6 @@ class AccountValidityServlet(RestServlet):
 
         yield self.account_activity_handler.renew_account(renewal_token)
 
+
 def register_servlets(http_server):
     AccountValidityServlet().register(http_server)
