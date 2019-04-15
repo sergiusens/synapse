@@ -52,6 +52,7 @@ class AccountValidityHandler(object):
                     "app": app_name,
                 }
             except Exception:
+                # If substitution failed, fall back to the bare strings.
                 self._subject = self.hs.config.renew_email_subject
                 self._from_string = self.hs.config.email_notif_from
 
