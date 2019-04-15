@@ -45,13 +45,13 @@ class AccountValidityHandler(object):
                 app_name = self.hs.config.email_app_name
 
                 self._subject = self.hs.config.renew_email_subject % {
-                    "app": self.app_name,
+                    "app": app_name,
                 }
 
                 self._from_string = self.hs.config.email_notif_from % {
-                    "app": self.app_name,
+                    "app": app_name,
                 }
-            except:
+            except Exception:
                 self._subject = self.hs.config.renew_email_subject
                 self._from_string = self.hs.config.email_notif_from
 
