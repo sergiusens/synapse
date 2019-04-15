@@ -17,13 +17,11 @@ import logging
 
 from twisted.internet import defer
 
-from ._base import client_v2_patterns
-from synapse.api.errors import (
-    SynapseError,
-    Codes,
-)
+from synapse.api.errors import SynapseError
 from synapse.handlers.account_validity import AccountValidityHandler
 from synapse.http.servlet import RestServlet
+
+from ._base import client_v2_patterns
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +34,7 @@ class AccountValidityServlet(RestServlet):
         Args:
             hs (synapse.server.HomeServer): server
         """
-        super(RegisterRestServlet, self).__init__()
+        super(AccountValidityServlet, self).__init__()
 
         self.hs = hs
         self.account_activity_handler = AccountValidityHandler(hs)
