@@ -35,6 +35,7 @@ class AccountValidityHandler(object):
         self.hs = hs
         self.store = self.hs.get_datastore()
         self.sendmail = self.hs.get_sendmail()
+        self.clock = self.hs.get_clock()
 
         self._account_validity = self.hs.config.account_validity
         self._app_name = self.hs.config.email_app_name
@@ -59,6 +60,12 @@ class AccountValidityHandler(object):
             config=self.hs.config,
             template_html_name=self.hs.config.email_expiry_template_html,
             template_text_name=self.hs.config.email_expiry_template_text,
+        )
+
+        # Check the renewal emails to send and send them every 30min.
+        self.clock.looping_call(
+            self.send_renewal_emails,
+            30 * 60 * 1000,
         )
 
     @defer.inlineCallbacks
@@ -90,7 +97,7 @@ class AccountValidityHandler(object):
             user_display_name = user
 
         renewal_string = yield self._get_renewal_string(user)
-        url = "%s_matrix/client/unstable/account_validity/refresh?token=%s" % (
+        url = "%s_matrix/client/unstable/account_validity/renew?token=%s" % (
             self.hs.config.public_baseurl,
             renewal_string,
         )
