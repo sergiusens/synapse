@@ -22,7 +22,6 @@ from email.mime.text import MIMEText
 from twisted.internet import defer
 
 from synapse.api.errors import StoreError
-from synapse.push import mailer
 from synapse.types import UserID
 from synapse.util import stringutils
 from synapse.util.logcontext import make_deferred_yieldable
@@ -41,6 +40,8 @@ class AccountValidityHandler(object):
 
         if self._account_validity.enabled:
             # Don't do anything if account validity isn't being used.
+            from synapse.push import mailer
+
             try:
                 app_name = self.hs.config.email_app_name
 
