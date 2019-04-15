@@ -594,6 +594,7 @@ class RegistrationStore(RegistrationWorkerStore,
                     values={
                         "user_id": user_id,
                         "expiration_ts_ms": expiration_ts,
+                        "email_sent": False,
                     }
                 )
         except self.database_engine.module.IntegrityError:
