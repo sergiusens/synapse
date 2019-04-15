@@ -80,7 +80,7 @@ class AccountValidityHandler(object):
 
             yield self.store.set_renewal_mail_status(
                 user=user["user_id"],
-                email_needs_sending=False,
+                email_sent=True,
             )
 
     @defer.inlineCallbacks
@@ -96,10 +96,10 @@ class AccountValidityHandler(object):
         except StoreError:
             user_display_name = user
 
-        renewal_string = yield self._get_renewal_string(user)
+        renewal_token = yield self._get_renewal_token(user)
         url = "%s_matrix/client/unstable/account_validity/renew?token=%s" % (
             self.hs.config.public_baseurl,
-            renewal_string,
+            renewal_token,
         )
 
         template_vars = {
@@ -149,13 +149,30 @@ class AccountValidityHandler(object):
         defer.returnValue(addresses)
 
     @defer.inlineCallbacks
-    def _get_renewal_string(self, user):
+    def _get_renewal_token(self, user):
         attempts = 0
         while attempts < 5:
             try:
-                renewal_string = stringutils.random_string(32)
-                yield self.store.set_renewal_string_for_user(user, renewal_string)
-                defer.returnValue(renewal_string)
+                renewal_token = stringutils.random_string(32)
+                yield self.store.set_renewal_token_for_user(user, renewal_token)
+                defer.returnValue(renewal_token)
             except StoreError:
                 attempts += 1
         raise StoreError(500, "Couldn't generate a unique string as refresh string.")
+
+    @defer.inlineCallbacks
+    def renew_account(self, renewal_token):
+        user = self.store.get_user_from_renewal_token(renewal_token)
+
+        new_expiration_date = self.clock.time_msec() + self._account_validity.period
+
+        yield self.store.set_expiration_ts_for_user(
+            user=user,
+            expiration_ts_ms=new_expiration_date,
+        )
+        # Set email_sent to false so that we can send a renewal email when the
+        # new validity period ends.
+        yield self.store.set_renewal_mail_status(
+            user=user["user_id"],
+            email_sent=False,
+        )

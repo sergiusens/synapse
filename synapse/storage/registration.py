@@ -108,12 +108,33 @@ class RegistrationWorkerStore(SQLBaseStore):
         defer.returnValue(res)
 
     @defer.inlineCallbacks
-    def set_renewal_string_for_user(self, user, renewal_string):
+    def set_expiration_ts_for_user(self, user, expiration_ts_ms):
         yield self._simple_update_one(
             table="account_validity",
             keyvalues={"user_id": user},
-            updatevalues={"renewal_string": renewal_string},
+            updatevalues={"expiration_ts_ms": expiration_ts_ms},
+            desc="set_expiration_ts_for_user",
         )
+
+    @defer.inlineCallbacks
+    def set_renewal_token_for_user(self, user, renewal_token):
+        yield self._simple_update_one(
+            table="account_validity",
+            keyvalues={"user_id": user},
+            updatevalues={"renewal_token": renewal_token},
+            desc="set_renewal_token_for_user",
+        )
+
+    @defer.inlineCallbacks
+    def get_user_from_renewal_token(self, token):
+        res = yield self._simple_select_one_onecol(
+            table="account_validity",
+            keyvalues={"renewal_token": token},
+            retcol="user_id",
+            desc="get_user_from_renewal_token",
+        )
+
+        defer.returnValue(res["user_id"])
 
     @defer.inlineCallbacks
     def get_users_expiring_soon(self):
@@ -141,11 +162,12 @@ class RegistrationWorkerStore(SQLBaseStore):
         defer.returnValue(res)
 
     @defer.inlineCallbacks
-    def set_renewal_mail_status(self, user, email_needs_sending):
+    def set_renewal_mail_status(self, user, email_sent):
         yield self._simple_update_one(
             table="account_validity",
             keyvalues={"user_id": user},
-            updatevalues={"email_sent": email_needs_sending},
+            updatevalues={"email_sent": email_sent},
+            desc="set_renewal_mail_status",
         )
 
     @defer.inlineCallbacks
