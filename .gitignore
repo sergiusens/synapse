@@ -7,6 +7,7 @@
 *.egg-info
 *.lock
 *.pyc
+*.snap
 *.tac
 _trial_temp/
 _trial_temp*/
@@ -37,4 +38,4 @@ _trial_temp*/
 /docs/build/
 /htmlcov
 /pip-wheel-metadata/
-
+/prime/

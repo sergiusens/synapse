@@ -1,0 +1,20 @@
+#!/bin/bash
+
+set -e
+
+COMMAND="$1"
+SERVER_CONFIG_FILE="${SNAP_COMMON}/homeserver.yaml"
+
+if [[ "${COMMAND}" != "start" ]] && [[ "${COMMAND}" != "stop" ]]; then
+    echo "Usage: ${SNAP_NAME}.server <start|stop>"
+    exit 1
+fi
+
+if [[ ! -f "$SERVER_CONFIG_FILE" ]]; then
+    echo "Please run ${SNAP_NAME}.configure before continuing."
+    exit 0
+fi
+
+# Switch to SNAP_DATA to make it the working directory
+cd "${SNAP_DATA}"
+exec "${SNAP}/bin/synctl" "${COMMAND}" "${SERVER_CONFIG_FILE}"

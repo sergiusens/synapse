@@ -1,0 +1,61 @@
+name: matrix-server
+base: core18
+confinement: strict
+architectures:
+  - build-on: amd64
+  - build-on: i386
+
+adopt-info: synapse
+summary: Reference implementation matrix server.
+description: |
+  Synapse is a reference "homeserver" implementation of Matrix from the core
+  development team at matrix.org, written in Python/Twisted. It is intended
+  to showcase the concept of Matrix and let folks see the spec in the context
+  of a codebase and let you run your own homeserver and generally help bootstrap
+  the ecosystem.
+
+apps:
+  server:
+    command: server start
+    daemon: forking
+    stop-command: server stop
+    adapter: full
+    plugs:
+      - network
+      - network-bind
+  configure:
+    command: configure
+    adapter: full
+    plugs:
+      - network-observe
+  register-new-user:
+    command: bin/register_new_matrix_user
+    adapter: full
+    plugs:
+      - network
+
+parts:
+  synapse:
+    source: .
+    source-type: git
+    source-tag: "v0.99.3"
+    plugin: python
+    override-pull: |
+      snapcraftctl pull
+      version="$(git describe --always | sed -e 's/-/+git/;y/-/./')"
+      [ -n "$(echo "$version" | grep "+git")" ] && grade=devel || grade=stable
+      snapcraftctl set-version "$version"
+      snapcraftctl set-grade "$grade"
+    override-prime: |
+      snapcraftctl prime
+      # Disable user site packages
+      sed -i "usr/lib/python3.6/site.py" -e 's/^ENABLE_USER_SITE = None$/ENABLE_USER_SITE = False/'
+      # Generate pycache
+      ./usr/bin/python3 -m compileall -q lib usr/lib
+    stage-packages:
+      - git
+    build-packages:
+      - git
+  scripts:
+    source: snap/local
+    plugin: dump

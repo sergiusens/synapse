@@ -1,0 +1,52 @@
+#!/bin/bash
+
+set -e
+
+SERVER_CONFIG_FILE="$SNAP_COMMON/homeserver.yaml"
+
+if [[ -f "$SERVER_CONFIG_FILE" ]]; then
+    echo "Server already configured, edit $SERVER_CONFIG_FILE to make changes."
+    exit 2
+fi
+
+if [[ "$USER" != "root" ]]; then
+    echo "This command requires root permissions."
+    exit 1
+fi
+
+SERVER_NAME="$1"
+REPORT_STATS="$2"
+
+if [[ -z "$SERVER_NAME" ]]; then
+    echo "Usage: $SNAP_NAME.configure <server-name> [report-stats]"
+    echo
+    echo "Status reporting defaults to no."
+    exit 1
+fi
+
+if [[ -n "$REPORT_STATS" ]]; then
+    STATS="yes"
+else
+    STATS="no"
+fi
+
+# Change to the directory where we want things stored first so $SERVER_CONFIG_FILE
+# properly sets it as the path.
+cd "${SNAP_DATA}"
+
+"${SNAP}/usr/bin/python3" \
+    -B \
+    -m synapse.app.homeserver \
+    -c "${SERVER_CONFIG_FILE}" \
+    --generate-config \
+    --server-name "$SERVER_NAME" \
+    --report-stats="$STATS"
+
+# The config should be set to the current link to support
+# revision upgrades.
+current_link="$(dirname $SNAP_DATA)/current"
+sed -i "${SERVER_CONFIG_FILE}" -e "s,${SNAP_DATA},${current_link},g"
+
+echo "Configuration created at $SERVER_CONFIG_FILE"
+# TODO Use hooks to start the service
+echo "Verify the configuration and restart the snap."
