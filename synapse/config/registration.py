@@ -23,17 +23,21 @@ from synapse.util.stringutils import random_string_with_symbols
 class AccountValidityConfig(Config):
     def __init__(self, config):
         self.enabled = (len(config) > 0)
+        self.renew_by_email_enabled = ("renew_at" in config)
 
-        if "period" in config:
-            self.period = self.parse_duration(config["period"])
+        if self.enabled:
+            if "period" in config:
+                self.period = self.parse_duration(config["period"])
+            else:
+                raise ConfigError("'period' is required when using account validity")
 
-        if "renew_at" in config:
-            self.renew_at = self.parse_duration(config["renew_at"])
+            if "renew_at" in config:
+                self.renew_at = self.parse_duration(config["renew_at"])
 
-        if "renew_email_subject" in config:
-            self.renew_email_subject = config["renew_email_subject"]
-        else:
-            self.renew_email_subject = "Renew your %(app)s account"
+            if "renew_email_subject" in config:
+                self.renew_email_subject = config["renew_email_subject"]
+            else:
+                self.renew_email_subject = "Renew your %(app)s account"
 
 
 class RegistrationConfig(Config):
@@ -93,12 +97,13 @@ class RegistrationConfig(Config):
         #
         #enable_registration: false
 
-        # Optional account validity parameter. This allows for accounts to be denied
+        # Optional account validity configuration. This allows for accounts to be denied
         # any request after a given period.
         #
         # ``period`` allows setting the period after which an account is valid
         # after its registration. When renewing the account, its validity period
-        # will be extended by this amount of time.
+        # will be extended by this amount of time. This parameter is required when using
+        # the account validity feature.
         #
         # ``renew_at`` is the amount of time before an account's expiry date at which
         # Synapse will send an email to the account's email address with a renewal link.

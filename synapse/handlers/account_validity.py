@@ -38,8 +38,8 @@ class AccountValidityHandler(object):
 
         self._account_validity = self.hs.config.account_validity
 
-        if self._account_validity.enabled:
-            # Don't do anything if account validity isn't being used.
+        if self._account_validity.renew_by_email_enabled:
+            # Don't do email-specific configuration if renewal by email is disabled.
             from synapse.push import mailer
 
             try:
