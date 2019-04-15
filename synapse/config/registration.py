@@ -106,8 +106,8 @@ class RegistrationConfig(Config):
         # filled.
         #
         # ``renew_email_subject`` is the subject of the email sent out with the renewal
-        # link. ``%%(app)s`` is a placeholder for the ``app_name`` parameter from the
-        # ``email`` section.
+        # link. ``%%(app)s`` can be used as a placeholder for the ``app_name`` parameter
+        # from the ``email`` section.
         #
         #account_validity:
         #  period: 6w

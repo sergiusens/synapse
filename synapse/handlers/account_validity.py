@@ -38,35 +38,36 @@ class AccountValidityHandler(object):
         self.clock = self.hs.get_clock()
 
         self._account_validity = self.hs.config.account_validity
-        self._app_name = self.hs.config.email_app_name
 
-        try:
-            self._subject = self.hs.config.renew_email_subject % {
-                "app": self._app_name,
-            }
-        except TypeError:
-            self._subject = self.hs.config.renew_email_subject
+        if self._account_validity.enabled:
+            # Don't do anything if account validity isn't being used.
+            try:
+                app_name = self.hs.config.email_app_name
 
-        try:
-            self._from_string = self.hs.config.email_notif_from % {
-                "app": self._app_name,
-            }
-        except TypeError:
-            self._from_string = self.hs.config.email_notif_from
+                self._subject = self.hs.config.renew_email_subject % {
+                    "app": self.app_name,
+                }
 
-        self._raw_from = email.utils.parseaddr(self._from_string)[1]
+                self._from_string = self.hs.config.email_notif_from % {
+                    "app": self.app_name,
+                }
+            except:
+                self._subject = self.hs.config.renew_email_subject
+                self._from_string = self.hs.config.email_notif_from
 
-        self._template_html, self._template_text = mailer.load_jinja2_templates(
-            config=self.hs.config,
-            template_html_name=self.hs.config.email_expiry_template_html,
-            template_text_name=self.hs.config.email_expiry_template_text,
-        )
+            self._raw_from = email.utils.parseaddr(self._from_string)[1]
 
-        # Check the renewal emails to send and send them every 30min.
-        self.clock.looping_call(
-            self.send_renewal_emails,
-            30 * 60 * 1000,
-        )
+            self._template_html, self._template_text = mailer.load_jinja2_templates(
+                config=self.hs.config,
+                template_html_name=self.hs.config.email_expiry_template_html,
+                template_text_name=self.hs.config.email_expiry_template_text,
+            )
+
+            # Check the renewal emails to send and send them every 30min.
+            self.clock.looping_call(
+                self.send_renewal_emails,
+                30 * 60 * 1000,
+            )
 
     @defer.inlineCallbacks
     def send_renewal_emails(self):
