@@ -267,9 +267,8 @@ class AccountValidityRenewalByEmailTestCase(unittest.HomeserverTestCase):
         self.email_attempts = []
 
         def sendmail(*args, **kwargs):
-            d = defer.Deferred()
-            self.email_attempts.append((d, args, kwargs))
-            return d
+            self.email_attempts.append((args, kwargs))
+            return
 
         config.email_template_dir = os.path.abspath(
             pkg_resources.resource_filename('synapse', 'res/templates')
