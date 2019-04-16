@@ -26,6 +26,11 @@ from synapse.types import UserID
 from synapse.util import stringutils
 from synapse.util.logcontext import make_deferred_yieldable
 
+try:
+    from synapse.push.mailer import load_jinja2_templates
+except ImportError:
+    load_jinja2_templates = None
+
 logger = logging.getLogger(__name__)
 
 
@@ -38,7 +43,7 @@ class AccountValidityHandler(object):
 
         self._account_validity = self.hs.config.account_validity
 
-        if self._account_validity.renew_by_email_enabled:
+        if self._account_validity.renew_by_email_enabled and load_jinja2_templates:
             # Don't do email-specific configuration if renewal by email is disabled.
             from synapse.push import mailer
 
@@ -59,7 +64,7 @@ class AccountValidityHandler(object):
 
             self._raw_from = email.utils.parseaddr(self._from_string)[1]
 
-            self._template_html, self._template_text = mailer.load_jinja2_templates(
+            self._template_html, self._template_text = load_jinja2_templates(
                 config=self.hs.config,
                 template_html_name=self.hs.config.email_expiry_template_html,
                 template_text_name=self.hs.config.email_expiry_template_text,
