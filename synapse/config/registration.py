@@ -42,6 +42,7 @@ class AccountValidityConfig(Config):
         if self.renew_by_email_enabled and "public_baseurl" not in synapse_config:
             raise ConfigError("Can't send renewal emails without 'public_baseurl'")
 
+
 class RegistrationConfig(Config):
 
     def read_config(self, config):

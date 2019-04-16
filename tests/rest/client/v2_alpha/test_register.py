@@ -1,6 +1,7 @@
 import datetime
 import json
 import os
+
 import pkg_resources
 
 from twisted.internet import defer
@@ -281,10 +282,7 @@ class AccountValidityRenewalByEmailTestCase(unittest.HomeserverTestCase):
 
         return self.hs
 
-    @unittest.DEBUG
     def test_renewal_email(self):
-        h = self.hs.get_account_validity_handler()
-
         user_id = self.register_user("kermit", "monkey")
         tok = self.login("kermit", "monkey")
         # We need to manually add an email address otherwise the handler will do
