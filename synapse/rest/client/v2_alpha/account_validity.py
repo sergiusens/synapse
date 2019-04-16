@@ -37,7 +37,7 @@ class AccountValidityServlet(RestServlet):
         super(AccountValidityServlet, self).__init__()
 
         self.hs = hs
-        self.account_activity_handler = AccountValidityHandler(hs)
+        self.account_activity_handler = hs.get_account_validity_handler()
 
     @defer.inlineCallbacks
     def on_GET(self, request):
