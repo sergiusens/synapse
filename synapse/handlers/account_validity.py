@@ -147,6 +147,11 @@ class AccountValidityHandler(object):
                 requireTransportSecurity=self.hs.config.require_transport_security
             ))
 
+        yield self.store.set_renewal_mail_status(
+            user_id=user_id,
+            email_sent=True,
+        )
+
     @defer.inlineCallbacks
     def _get_email_addresses_for_user(self, user_id):
         threepids = yield self.store.user_get_threepids(user_id)
