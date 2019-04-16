@@ -12,12 +12,12 @@ from synapse.appservice import ApplicationService
 from synapse.rest.client.v1 import admin, login
 from synapse.rest.client.v2_alpha import account_validity, register, sync
 
+from tests import unittest
+
 try:
     from synapse.push.mailer import load_jinja2_templates
 except ImportError:
     load_jinja2_templates = None
-
-from tests import unittest
 
 
 class RegisterRestServletTestCase(unittest.HomeserverTestCase):
