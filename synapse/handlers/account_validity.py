@@ -45,8 +45,6 @@ class AccountValidityHandler(object):
 
         if self._account_validity.renew_by_email_enabled and load_jinja2_templates:
             # Don't do email-specific configuration if renewal by email is disabled.
-            from synapse.push import mailer
-
             try:
                 app_name = self.hs.config.email_app_name
 
