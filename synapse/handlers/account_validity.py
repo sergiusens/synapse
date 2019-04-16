@@ -80,13 +80,13 @@ class AccountValidityHandler(object):
 
         if expiring_users:
             for user in expiring_users:
-                yield self.send_renewal_email_to_user(
+                yield self._send_renewal_email(
                     user_id=user["user_id"],
                     expiration_ts=user["expiration_ts_ms"],
                 )
 
     @defer.inlineCallbacks
-    def send_renewal_email_to_user(self, user_id, expiration_ts):
+    def _send_renewal_email(self, user_id, expiration_ts):
         addresses = yield self._get_email_addresses_for_user(user_id)
 
         # Stop right here if the user doesn't have at least one email address.
