@@ -76,6 +76,11 @@ class AccountValidityHandler(object):
 
     @defer.inlineCallbacks
     def send_renewal_emails(self):
+        """Gets the list of users whose account is expiring in the amount of time
+        configured in the ``renew_at`` parameter from the ``account_validity``
+        configuration, and sends renewal emails to all of these users as long as they
+        have an email 3PID attached to their account.
+        """
         expiring_users = yield self.store.get_users_expiring_soon()
 
         if expiring_users:
@@ -87,6 +92,14 @@ class AccountValidityHandler(object):
 
     @defer.inlineCallbacks
     def _send_renewal_email(self, user_id, expiration_ts):
+        """Sends out a renewal email to every email address attached to the given user
+        with a unique link allowing them to renew their account.
+
+        Args:
+            user_id (str): ID of the user to send email(s) to.
+            expiration_ts (int): Timestamp in milliseconds for the expiration date of
+                this user's account (used in the email templates).
+        """
         addresses = yield self._get_email_addresses_for_user(user_id)
 
         # Stop right here if the user doesn't have at least one email address.
@@ -154,6 +167,14 @@ class AccountValidityHandler(object):
 
     @defer.inlineCallbacks
     def _get_email_addresses_for_user(self, user_id):
+        """Retrieve the list of email addresses attached to a user's account.
+
+        Args:
+            user_id (str): ID of the user to lookup email addresses for.
+
+        Returns:
+            defer.Deferred[list[str]]: Email addresses for this account.
+        """
         threepids = yield self.store.user_get_threepids(user_id)
 
         addresses = []
@@ -165,6 +186,18 @@ class AccountValidityHandler(object):
 
     @defer.inlineCallbacks
     def _get_renewal_token(self, user_id):
+        """Generates a 32-byte long random string that will be inserted into the
+        user's renewal email's unique link, then saves it into the database.
+
+        Args:
+            user_id (str): ID of the user to generate a string for.
+
+        Returns:
+            defer.Deferred[str]: The generated string.
+
+        Raises:
+            StoreError(500): Couldn't generate a unique string after 5 attempts.
+        """
         attempts = 0
         while attempts < 5:
             try:
@@ -177,8 +210,15 @@ class AccountValidityHandler(object):
 
     @defer.inlineCallbacks
     def renew_account(self, renewal_token):
-        logger.debug("Renewing an account with token %s", renewal_token)
+        """Renews the account attached to a given renewal token by pushing back the
+        expiration date by the current validity period in the server's configuration.
+
+        Args:
+            renewal_token (str): Token sent with the renewal request.
+        """
         user_id = yield self.store.get_user_from_renewal_token(renewal_token)
+
+        logger.debug("Renewing an account for user %s", user_id)
 
         new_expiration_date = self.clock.time_msec() + self._account_validity.period
 
