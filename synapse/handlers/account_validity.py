@@ -45,7 +45,7 @@ class AccountValidityHandler(object):
             try:
                 app_name = self.hs.config.email_app_name
 
-                self._subject = self.hs.config.renew_email_subject % {
+                self._subject = self._account_validity.renew_email_subject % {
                     "app": app_name,
                 }
 
@@ -54,7 +54,7 @@ class AccountValidityHandler(object):
                 }
             except Exception:
                 # If substitution failed, fall back to the bare strings.
-                self._subject = self.hs.config.renew_email_subject
+                self._subject = self._account_validity.renew_email_subject
                 self._from_string = self.hs.config.email_notif_from
 
             self._raw_from = email.utils.parseaddr(self._from_string)[1]
@@ -75,20 +75,22 @@ class AccountValidityHandler(object):
     def send_renewal_emails(self):
         expiring_users = yield self.store.get_users_expiring_soon()
 
-        for user in expiring_users:
-            yield self.send_renewal_email_to_user(
-                user=user["user_id"],
-                expiration_ts=user["expiration_ts_ms"],
-            )
-
-            yield self.store.set_renewal_mail_status(
-                user=user["user_id"],
-                email_sent=True,
-            )
+        if expiring_users:
+            for user in expiring_users:
+                yield self.send_renewal_email_to_user(
+                    user=user["user_id"],
+                    expiration_ts=user["expiration_ts_ms"],
+                )
 
     @defer.inlineCallbacks
     def send_renewal_email_to_user(self, user, expiration_ts):
         addresses = yield self._get_email_addresses_for_user(user)
+
+        # Stop right here if the user doesn't have at least one email address.
+        # In this case, they will have to ask their server admin to renew their
+        # account manually.
+        if not addresses:
+            return
 
         try:
             user_display_name = yield self.store.get_profile_displayname(
@@ -129,6 +131,8 @@ class AccountValidityHandler(object):
             multipart_msg.attach(text_part)
             multipart_msg.attach(html_part)
 
+            logger.info("Sending renewal email to %s", address)
+
             yield make_deferred_yieldable(self.sendmail(
                 self.hs.config.email_smtp_host,
                 self._raw_from, raw_to, multipart_msg.as_string().encode('utf8'),
@@ -165,7 +169,8 @@ class AccountValidityHandler(object):
 
     @defer.inlineCallbacks
     def renew_account(self, renewal_token):
-        user = self.store.get_user_from_renewal_token(renewal_token)
+        logger.debug("Renewing an account with token %s", renewal_token)
+        user = yield self.store.get_user_from_renewal_token(renewal_token)
 
         new_expiration_date = self.clock.time_msec() + self._account_validity.period
 

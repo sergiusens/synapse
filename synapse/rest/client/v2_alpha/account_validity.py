@@ -18,7 +18,6 @@ import logging
 from twisted.internet import defer
 
 from synapse.api.errors import SynapseError
-from synapse.handlers.account_validity import AccountValidityHandler
 from synapse.http.servlet import RestServlet
 
 from ._base import client_v2_patterns
@@ -26,15 +25,15 @@ from ._base import client_v2_patterns
 logger = logging.getLogger(__name__)
 
 
-class AccountValidityServlet(RestServlet):
-    PATTERNS = client_v2_patterns("/account_validity/renew")
+class AccountValidityRenewServlet(RestServlet):
+    PATTERNS = client_v2_patterns("/account_validity/renew$")
 
     def __init__(self, hs):
         """
         Args:
             hs (synapse.server.HomeServer): server
         """
-        super(AccountValidityServlet, self).__init__()
+        super(AccountValidityRenewServlet, self).__init__()
 
         self.hs = hs
         self.account_activity_handler = hs.get_account_validity_handler()
@@ -45,8 +44,10 @@ class AccountValidityServlet(RestServlet):
             raise SynapseError(400, "Missing renewal token")
         renewal_token = request.args[b"token"][0]
 
-        yield self.account_activity_handler.renew_account(renewal_token)
+        yield self.account_activity_handler.renew_account(renewal_token.decode('utf8'))
+
+        defer.returnValue((200, {}))
 
 
 def register_servlets(hs, http_server):
-    AccountValidityServlet(hs).register(http_server)
+    AccountValidityRenewServlet(hs).register(http_server)

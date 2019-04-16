@@ -21,7 +21,7 @@ from synapse.util.stringutils import random_string_with_symbols
 
 
 class AccountValidityConfig(Config):
-    def __init__(self, config):
+    def __init__(self, config, synapse_config):
         self.enabled = (len(config) > 0)
         self.renew_by_email_enabled = ("renew_at" in config)
 
@@ -39,6 +39,8 @@ class AccountValidityConfig(Config):
             else:
                 self.renew_email_subject = "Renew your %(app)s account"
 
+        if self.renew_by_email_enabled and "public_baseurl" not in synapse_config:
+            raise ConfigError("Can't send renewal emails without 'public_baseurl'")
 
 class RegistrationConfig(Config):
 
@@ -51,7 +53,9 @@ class RegistrationConfig(Config):
                 strtobool(str(config["disable_registration"]))
             )
 
-        self.account_validity = AccountValidityConfig(config.get("account_validity", {}))
+        self.account_validity = AccountValidityConfig(
+            config.get("account_validity", {}), config,
+        )
 
         self.registrations_require_3pid = config.get("registrations_require_3pid", [])
         self.allowed_local_3pids = config.get("allowed_local_3pids", [])

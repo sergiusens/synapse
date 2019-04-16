@@ -110,7 +110,7 @@ class RegistrationWorkerStore(SQLBaseStore):
     @defer.inlineCallbacks
     def renew_account_for_user(self, user, new_expiration_ts):
         def renew_account_for_user_txn(txn, user, new_expiration_ts):
-            yield self._simple_update_txn(
+            self._simple_update_txn(
                 txn=txn,
                 table="account_validity",
                 keyvalues={"user_id": user},
@@ -147,7 +147,18 @@ class RegistrationWorkerStore(SQLBaseStore):
             desc="get_user_from_renewal_token",
         )
 
-        defer.returnValue(res["user_id"])
+        defer.returnValue(res)
+
+    @defer.inlineCallbacks
+    def get_renewal_token_for_user(self, user):
+        res = yield self._simple_select_one_onecol(
+            table="account_validity",
+            keyvalues={"user_id": user},
+            retcol="renewal_token",
+            desc="get_renewal_token_for_user",
+        )
+
+        defer.returnValue(res)
 
     @defer.inlineCallbacks
     def get_users_expiring_soon(self):
@@ -161,10 +172,11 @@ class RegistrationWorkerStore(SQLBaseStore):
         def select_users_txn(txn, now_ms, renew_at):
             sql = (
                 "SELECT user_id, expiration_ts_ms FROM account_validity"
-                " WHERE email_sent = False AND (expiration_ts_ms - ?) =< ?"
+                " WHERE email_sent = 0 AND (expiration_ts_ms - ?) <= ?"
             )
             values = [now_ms, renew_at]
             txn.execute(sql, values)
+            return self.cursor_to_dict(txn)
 
         res = yield self.runInteraction(
             "get_users_expiring_soon",
