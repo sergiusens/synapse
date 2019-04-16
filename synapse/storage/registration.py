@@ -601,7 +601,7 @@ class RegistrationStore(RegistrationWorkerStore,
                 400, "User ID already taken.", errcode=Codes.USER_IN_USE
             )
 
-        if self._account_validity.enabled:
+        if self._account_validity.enabled and not admin:
             now_ms = self.clock.time_msec()
             expiration_ts = now_ms + self._account_validity.period
             self._simple_insert_txn(
