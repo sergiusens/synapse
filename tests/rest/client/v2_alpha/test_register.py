@@ -4,8 +4,6 @@ import os
 
 import pkg_resources
 
-from twisted.internet import defer
-
 from synapse.api.constants import LoginType
 from synapse.api.errors import Codes
 from synapse.appservice import ApplicationService
