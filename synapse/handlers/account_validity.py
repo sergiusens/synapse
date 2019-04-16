@@ -78,13 +78,13 @@ class AccountValidityHandler(object):
         if expiring_users:
             for user in expiring_users:
                 yield self.send_renewal_email_to_user(
-                    user=user["user_id"],
+                    user_id=user["user_id"],
                     expiration_ts=user["expiration_ts_ms"],
                 )
 
     @defer.inlineCallbacks
-    def send_renewal_email_to_user(self, user, expiration_ts):
-        addresses = yield self._get_email_addresses_for_user(user)
+    def send_renewal_email_to_user(self, user_id, expiration_ts):
+        addresses = yield self._get_email_addresses_for_user(user_id)
 
         # Stop right here if the user doesn't have at least one email address.
         # In this case, they will have to ask their server admin to renew their
@@ -94,14 +94,14 @@ class AccountValidityHandler(object):
 
         try:
             user_display_name = yield self.store.get_profile_displayname(
-                UserID.from_string(user).localpart
+                UserID.from_string(user_id).localpart
             )
             if user_display_name is None:
-                user_display_name = user
+                user_display_name = user_id
         except StoreError:
-            user_display_name = user
+            user_display_name = user_id
 
-        renewal_token = yield self._get_renewal_token(user)
+        renewal_token = yield self._get_renewal_token(user_id)
         url = "%s_matrix/client/unstable/account_validity/renew?token=%s" % (
             self.hs.config.public_baseurl,
             renewal_token,
@@ -145,8 +145,8 @@ class AccountValidityHandler(object):
             ))
 
     @defer.inlineCallbacks
-    def _get_email_addresses_for_user(self, user):
-        threepids = yield self.store.user_get_threepids(user)
+    def _get_email_addresses_for_user(self, user_id):
+        threepids = yield self.store.user_get_threepids(user_id)
 
         addresses = []
         for threepid in threepids:
@@ -156,12 +156,12 @@ class AccountValidityHandler(object):
         defer.returnValue(addresses)
 
     @defer.inlineCallbacks
-    def _get_renewal_token(self, user):
+    def _get_renewal_token(self, user_id):
         attempts = 0
         while attempts < 5:
             try:
                 renewal_token = stringutils.random_string(32)
-                yield self.store.set_renewal_token_for_user(user, renewal_token)
+                yield self.store.set_renewal_token_for_user(user_id, renewal_token)
                 defer.returnValue(renewal_token)
             except StoreError:
                 attempts += 1
@@ -170,11 +170,11 @@ class AccountValidityHandler(object):
     @defer.inlineCallbacks
     def renew_account(self, renewal_token):
         logger.debug("Renewing an account with token %s", renewal_token)
-        user = yield self.store.get_user_from_renewal_token(renewal_token)
+        user_id = yield self.store.get_user_from_renewal_token(renewal_token)
 
         new_expiration_date = self.clock.time_msec() + self._account_validity.period
 
         yield self.store.renew_account_for_user(
-            user=user,
+            user_id=user_id,
             new_expiration_ts=new_expiration_date,
         )

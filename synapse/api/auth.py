@@ -230,7 +230,8 @@ class Auth(object):
 
             # Deny the request if the user account has expired.
             if self._account_validity.enabled:
-                expiration_ts = yield self.store.get_expiration_ts_for_user(user)
+                user_id = user.to_string()
+                expiration_ts = yield self.store.get_expiration_ts_for_user(user_id)
                 if self.clock.time_msec() >= expiration_ts:
                     raise AuthError(
                         403,

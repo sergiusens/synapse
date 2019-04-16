@@ -88,11 +88,11 @@ class RegistrationWorkerStore(SQLBaseStore):
         )
 
     @cachedInlineCallbacks()
-    def get_expiration_ts_for_user(self, user):
+    def get_expiration_ts_for_user(self, user_id):
         """Get the expiration timestamp for the account bearing a given user ID.
 
         Args:
-            user (str): The ID of the user.
+            user_id (str): The ID of the user.
         Returns:
             defer.Deferred: None, if the account has no expiration timestamp,
             otherwise int representation of the timestamp (as a number of
@@ -100,40 +100,39 @@ class RegistrationWorkerStore(SQLBaseStore):
         """
         res = yield self._simple_select_one_onecol(
             table="account_validity",
-            keyvalues={"user_id": user.to_string()},
+            keyvalues={"user_id": user_id},
             retcol="expiration_ts_ms",
             allow_none=True,
-            desc="get_expiration_date_for_user",
+            desc="get_expiration_ts_for_user",
         )
         defer.returnValue(res)
 
     @defer.inlineCallbacks
-    def renew_account_for_user(self, user, new_expiration_ts):
-        def renew_account_for_user_txn(txn, user, new_expiration_ts):
+    def renew_account_for_user(self, user_id, new_expiration_ts):
+        def renew_account_for_user_txn(txn):
             self._simple_update_txn(
                 txn=txn,
                 table="account_validity",
-                keyvalues={"user_id": user},
+                keyvalues={"user_id": user_id},
                 updatevalues={
                     "expiration_ts_ms": new_expiration_ts,
                     "email_sent": False,
                 },
             )
             self._invalidate_cache_and_stream(
-                txn, self.get_expiration_ts_for_user, (user,),
+                txn, self.get_expiration_ts_for_user, (user_id,),
             )
 
         yield self.runInteraction(
             "renew_account_for_user",
             renew_account_for_user_txn,
-            user, new_expiration_ts,
         )
 
     @defer.inlineCallbacks
-    def set_renewal_token_for_user(self, user, renewal_token):
+    def set_renewal_token_for_user(self, user_id, renewal_token):
         yield self._simple_update_one(
             table="account_validity",
-            keyvalues={"user_id": user},
+            keyvalues={"user_id": user_id},
             updatevalues={"renewal_token": renewal_token},
             desc="set_renewal_token_for_user",
         )
@@ -150,10 +149,10 @@ class RegistrationWorkerStore(SQLBaseStore):
         defer.returnValue(res)
 
     @defer.inlineCallbacks
-    def get_renewal_token_for_user(self, user):
+    def get_renewal_token_for_user(self, user_id):
         res = yield self._simple_select_one_onecol(
             table="account_validity",
-            keyvalues={"user_id": user},
+            keyvalues={"user_id": user_id},
             retcol="renewal_token",
             desc="get_renewal_token_for_user",
         )
@@ -187,10 +186,10 @@ class RegistrationWorkerStore(SQLBaseStore):
         defer.returnValue(res)
 
     @defer.inlineCallbacks
-    def set_renewal_mail_status(self, user, email_sent):
+    def set_renewal_mail_status(self, user_id, email_sent):
         yield self._simple_update_one(
             table="account_validity",
-            keyvalues={"user_id": user},
+            keyvalues={"user_id": user_id},
             updatevalues={"email_sent": email_sent},
             desc="set_renewal_mail_status",
         )
